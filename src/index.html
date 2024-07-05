@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Image Generator</title>
+    <link href="./output.css" rel="stylesheet" />
+    <style>
+      body {
+        background: linear-gradient(-45deg, #f6d365, #fda085, #a8edea, #d4fc79);
+        background-size: 400% 400%;
+        animation: gradientBG 15s ease infinite;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        padding: 20px;
+        font-family: Arial, sans-serif;
+      }
+
+      @keyframes gradientBG {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
+
+      .content-wrapper {
+        text-align: center;
+        max-width: 800px;
+        width: 100%;
+      }
+
+      .glowing-border {
+        border: 1px solid #fff;
+        border-radius: 10px;
+        animation: glow 3s ease-in-out infinite alternate;
+        padding: 20px;
+        margin-top: 20px;
+        display: none;
+      }
+
+      @keyframes glow {
+        from {
+          box-shadow: 0 0 2px #fff, 0 0 4px #fff, 0 0 6px #fff, 0 0 8px #ff9edb,
+            0 0 14px #ff9edb;
+        }
+        to {
+          box-shadow: 0 0 4px #fff, 0 0 8px #fff, 0 0 12px #fff,
+            0 0 16px #ff9edb, 0 0 28px #ff9edb;
+        }
+      }
+
+      .image-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        justify-content: center;
+      }
+
+      .image-pair {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .image-pair img {
+        width: 200px;
+        height: 200px;
+        object-fit: cover;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        margin-bottom: 10px;
+      }
+
+      .loader {
+        border: 4px solid #f3f3f3; /* Light grey, reduced thickness */
+        border-top: 4px solid #3498db; /* Nice blue color */
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        display: none;
+        margin: 20px auto;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .download-btn {
+        background-color: #3498db;
+        color: white;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-top: 10px;
+        margin-bottom: 10px;
+      }
+
+      .download-btn:hover {
+        background-color: #2980b9;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="content-wrapper">
+      <h1 class="text-3xl font-bold text-blue-800 mb-4">Image Generator</h1>
+      <div id="prompt-suggestion" class="text-orange-800 font-serif mb-2">
+        Try: "Cyberpunk Mermaid"
+      </div>
+      <div class="input-container">
+        <input
+          type="text"
+          id="prompt-input"
+          placeholder="Enter your prompt"
+          class="text-l mb-4 p-2 rounded"
+        />
+        <button id="submit-button" class="p-2 bg-blue-500 text-white rounded">
+          🔍
+        </button>
+      </div>
+      <div id="status" class="text-zinc-800 mb-4">
+        Waiting for your prompt...
+      </div>
+
+      <div class="glowing-border">
+        <div class="image-grid">
+          <div class="image-pair">
+            <img
+              src=""
+              alt="Image"
+              class="generated-image hover:shadow-lg hue-rotate-15 contrast-125 hidden"
+            />
+            <img
+              src=""
+              alt="Image"
+              class="generated-image hover:shadow-lg sepia hidden"
+            />
+          </div>
+          <div class="image-pair">
+            <img
+              src=""
+              alt="Image"
+              class="generated-image hover:shadow-lg hue-rotate-15 contrast-125 hidden"
+            />
+            <img
+              src=""
+              alt="Image"
+              class="generated-image hover:shadow-lg sepia hidden"
+            />
+          </div>
+          <div class="image-pair">
+            <img
+              src=""
+              alt="Image"
+              class="generated-image hover:shadow-lg hue-rotate-15 contrast-125 hidden"
+            />
+            <img
+              src=""
+              alt="Image"
+              class="generated-image hover:shadow-lg sepia hidden"
+            />
+          </div>
+          <div class="image-pair">
+            <img
+              src=""
+              alt="Image"
+              class="generated-image hover:shadow-lg hue-rotate-15 contrast-125 hidden"
+            />
+            <img
+              src=""
+              alt="Image"
+              class="generated-image hover:shadow-lg sepia hidden"
+            />
+          </div>
+        </div>
+      </div>
+      <div id="loader" class="loader"></div>
+    </div>
+
+    <script>
+      // document.addEventListener('DOMContentLoaded', function() {
+      //     const statusDiv = document.getElementById('status');
+      //     const imageContainer = document.getElementById('image-container');
+      //     const serverUrl = 'http://127.0.0.1:5000'; // Add this line
+
+      //     fetch(`${serverUrl}/generate`, {
+      //         method: 'POST',
+      //         headers: {
+      //             'Content-Type': 'application/json',
+      //         },
+      //         body: JSON.stringify({ prompt: 'A new world' }),
+      //     })
+      //     .then(response => {
+      //         if (!response.ok) {
+      //             throw new Error(`HTTP error! status: ${response.status}`);
+      //         }
+      //         return response.json();
+      //     })
+      //     .then(data => {
+      //         console.log('Received data:', data);
+      //         if (data.image_url) {
+      //             statusDiv.textContent = 'Image received!';
+      //             const img = document.createElement('img');
+      //             img.src = serverUrl + data.image_url; // Modify this line
+      //             img.alt = 'Generated image';
+      //             img.onload = () => {
+      //                 statusDiv.textContent = 'Image loaded successfully!';
+      //             };
+      //             img.onerror = () => {
+      //                 statusDiv.textContent = 'Error loading image. Check console for details.';
+      //                 console.error('Failed to load image from URL:', img.src);
+      //             };
+      //             imageContainer.appendChild(img);
+      //         } else {
+      //             statusDiv.textContent = 'No image URL received from server.';
+      //         }
+      //     })
+      //     .catch(error => {
+      //         statusDiv.textContent = 'Error occurred. Check console for details.';
+      //         console.error('There was a problem with the fetch operation:', error);
+      //     });
+      // });
+
+      document.addEventListener("DOMContentLoaded", function () {
+        const statusDiv = document.getElementById("status");
+        const serverUrl = "http://127.0.0.1:5000";
+        const promptInput = document.getElementById("prompt-input");
+        const submitButton = document.getElementById("submit-button");
+        const images = document.querySelectorAll(".generated-image");
+
+        // Check if there's a prompt in the URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const promptFromURL = urlParams.get("prompt");
+        if (promptFromURL) {
+          promptInput.value = decodeURIComponent(promptFromURL);
+          generateImages(promptFromURL);
+        }
+
+        function generateImages(prompt) {
+          statusDiv.textContent = "Generating images...";
+          showLoader(); // Show loader when starting generation
+          let generatedImages = [];
+
+          // Generate all images in parallel
+          const promises = Array.from(images).map((img, index) => {
+            return fetch(`${serverUrl}/generate`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ prompt: prompt }),
+            })
+              .then((response) => {
+                if (!response.ok) {
+                  throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+              })
+              .then((data) => {
+                console.log(`Received data for image ${index + 1}:`, data);
+                return { index, imageUrl: data.image_url };
+              })
+              .catch((error) => {
+                console.error(
+                  `There was a problem generating image ${index + 1}:`,
+                  error
+                );
+                return { index, error: true };
+              });
+          });
+
+          // Wait for all images to be generated
+          Promise.all(promises).then((results) => {
+            hideLoader();
+            generatedImages = results.sort((a, b) => a.index - b.index);
+            displayImagesSequentially(generatedImages);
+          });
+        }
+
+        function displayImagesSequentially(generatedImages) {
+          document.querySelector(".glowing-border").style.display = "block";
+          let currentIndex = 0;
+
+          function displayNextImage() {
+            if (currentIndex >= generatedImages.length) {
+              statusDiv.textContent = "All images displayed!";
+              return;
+            }
+
+            const { index, imageUrl, error } = generatedImages[currentIndex];
+            const img = images[index];
+            img.classList.add("hidden");
+
+            if (error) {
+              statusDiv.textContent = `Error with image ${
+                index + 1
+              }. Moving to next.`;
+              currentIndex++;
+              setTimeout(displayNextImage, 1000); // Wait 1 second before next image
+            } else if (imageUrl) {
+              img.src = serverUrl + imageUrl;
+              img.onload = () => {
+                img.classList.remove("hidden");
+                statusDiv.textContent = `Displaying image ${index + 1} of ${
+                  images.length
+                }`;
+                addDownloadButtons(img, index);
+                currentIndex++;
+                setTimeout(displayNextImage, 1000); // Wait 1 second before next image
+              };
+              img.onerror = () => {
+                statusDiv.textContent = `Error loading image ${
+                  index + 1
+                }. Moving to next.`;
+                currentIndex++;
+                setTimeout(displayNextImage, 1000); // Wait 1 second before next image
+              };
+            } else {
+              statusDiv.textContent = `No image URL for image ${
+                index + 1
+              }. Moving to next.`;
+              currentIndex++;
+              setTimeout(displayNextImage, 1000); // Wait 1 second before next image
+            }
+          }
+
+          displayNextImage();
+        }
+
+        submitButton.addEventListener("click", function () {
+          const prompt = promptInput.value;
+          if (prompt) {
+            // Reload the page with the prompt as a query parameter
+            window.location.href =
+              window.location.pathname +
+              "?prompt=" +
+              encodeURIComponent(prompt);
+          } else {
+            statusDiv.textContent = "Please enter a prompt.";
+          }
+        });
+      });
+      // console.log('Number of image elements:', images.length);
+      //additional stuff
+      const suggestions = [
+        "Northern lights over a frozen landscape",
+        "Retro-futuristic space colony",
+        "Cosmic Jellyfish",
+        "Futuristic Tokyo at night",
+        "Alien marketplace on a distant planet",
+      ];
+
+      function rotateSuggestions() {
+        const suggestionElement = document.getElementById("prompt-suggestion");
+        let index = 0;
+        setInterval(() => {
+          suggestionElement.textContent = `Try: "${suggestions[index]}"`;
+          index = (index + 1) % suggestions.length;
+        }, 5000); // Change suggestion every 5 seconds
+      }
+
+      rotateSuggestions();
+
+      function showLoader() {
+        document.getElementById("loader").style.display = "block";
+      }
+
+      function hideLoader() {
+        document.getElementById("loader").style.display = "none";
+      }
+
+      function addDownloadButtons(img, index) {
+        const downloadBtn = document.createElement("button");
+        downloadBtn.textContent = "Download";
+        downloadBtn.classList.add("download-btn");
+        downloadBtn.onclick = () =>
+          downloadImage(img.src, `generated-image-${index + 1}.png`);
+        img.parentNode.insertBefore(downloadBtn, img.nextSibling);
+      }
+
+      function downloadImage(imgSrc, fileName) {
+        fetch(imgSrc)
+          .then((response) => response.blob())
+          .then((blob) => {
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(link);
+          })
+          .catch((error) => console.error("Error downloading image:", error));
+      }
+    </script>
+  </body>
+</html>
